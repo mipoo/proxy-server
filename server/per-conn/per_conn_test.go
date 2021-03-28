@@ -16,7 +16,8 @@ func TestPerConn(t *testing.T) {
 		opts.Proxy.DsAddr = ":8999"
 	})
 	proxyServer.AddRs(&api.RsNode{
-		Addr: "183.36.123.53:11111",
+		Addr: "127.0.0.1:51754",
+		//Addr: "183.36.123.53:11111",
 	})
 	if err = proxyServer.Start(); err != nil && err != errors.ErrServerClosed {
 		t.Fatal(err)

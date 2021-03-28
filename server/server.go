@@ -34,7 +34,6 @@ func (s *normalServer) Init(option ...api.Option) error {
 func (s *normalServer) AddRs(rs ...*api.RsNode) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	// FIXME: 防重复添加
 	for _, node := range rs {
 		if !s.containsNode(node) {
 			err := s.ncs.AddRs(node)
@@ -189,8 +188,8 @@ func NormalProxyServer(opt ...api.Option) (api.Server, error) {
 			Rss: make([]*api.RsNode, 0),
 			Ctx: context.Background(),
 		},
-		Lb:              nil, // TODO
-		RunnableFactory: nil, // TODO
+		Lb:              nil,
+		RunnableFactory: nil,
 	}
 	load_balancer.Random()(&opts)
 	for _, o := range opt {
