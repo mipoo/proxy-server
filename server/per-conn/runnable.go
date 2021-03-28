@@ -16,15 +16,27 @@ type perConnRunnable struct {
 	// client connection
 	cc net.Conn
 	// real server connection
-	rc     net.Conn
+	rc net.Conn
+	// use zero copy
+	zcopy  bool
 	nextRc api.NextConn
 	ctx    context.Context
 	done   context.CancelFunc
 }
 
-func PerConnRunnableFactory() api.Option {
+type justReader struct {
+	io.Reader
+}
+
+func PerConnRunnableFactory(zcopy bool) api.Option {
 	return func(opt *api.Options) {
-		opt.RunnableFactory = perConnRunnableFactory
+		opt.RunnableFactory = func(cc net.Conn, nextRc api.NextConn) api.Runnable {
+			return &perConnRunnable{
+				cc:     cc,
+				nextRc: nextRc,
+				zcopy:  zcopy,
+			}
+		}
 	}
 }
 
@@ -56,8 +68,12 @@ func (p perConnRunnable) run(callback api.CompleteCallback) {
 	p.done = done
 
 	go func() {
+		var cc io.Reader = p.cc
+		if !p.zcopy {
+			cc = &justReader{p.cc}
+		}
 		// copy cc to rc
-		_, err := io.Copy(p.rc, p.cc)
+		_, err := io.Copy(p.rc, cc)
 		if err == nil {
 			// cc EOF  , notify rc no need to read
 			_ = p.rc.SetReadDeadline(time.Now())
@@ -71,8 +87,12 @@ func (p perConnRunnable) run(callback api.CompleteCallback) {
 	}()
 
 	go func() {
+		var rc io.Reader = p.rc
+		if !p.zcopy {
+			rc = &justReader{p.cc}
+		}
 		// copy rc to cc
-		_, err := io.Copy(p.cc, p.rc)
+		_, err := io.Copy(p.cc, rc)
 		if err == nil {
 			// rc EOF  , notify cc no need to read
 			_ = p.cc.SetReadDeadline(time.Now())

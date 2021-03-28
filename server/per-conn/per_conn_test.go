@@ -8,7 +8,7 @@ import (
 )
 
 func TestPerConn(t *testing.T) {
-	proxyServer, err := server.NormalProxyServer(PerConnRunnableFactory())
+	proxyServer, err := server.NormalProxyServer(PerConnRunnableFactory(true))
 	if err != nil {
 		t.Fatal(err)
 	}
